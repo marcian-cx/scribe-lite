@@ -127,9 +127,9 @@ ipcMain.handle('fs:readDir', async (event, dirPath) => {
     
     const entries = await fs.readdir(dirPath, { withFileTypes: true })
     
-    // Return all files (not just .md files) so user can see their files
+    // Return only .md files for the poetry IDE
     return entries
-      .filter(entry => entry.isFile())
+      .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
       .map(entry => entry.name)
   } catch (error) {
     console.error('Error occurred in handler for \'fs:readDir\':', error)

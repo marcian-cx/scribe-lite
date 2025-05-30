@@ -4,6 +4,7 @@ export const useProjectFolder = () => {
   const [projectFolder, setProjectFolderState] = useState(null)
   const [files, setFiles] = useState(new Map())
   const [currentFile, setCurrentFile] = useState(null)
+  const [openFiles, setOpenFiles] = useState([])
   const [isLoading, setIsLoading] = useState(false)
 
   const loadFile = useCallback(async (fileName) => {
@@ -25,8 +26,11 @@ export const useProjectFolder = () => {
         }
         return newMap
       })
+      
+      return content
     } catch (error) {
       // File read error - could show notification
+      throw error
     }
   }, [projectFolder])
 
@@ -67,13 +71,16 @@ export const useProjectFolder = () => {
       if (fileMap.size > 0) {
         const firstFile = Array.from(fileMap.keys())[0]
         setCurrentFile(firstFile)
+        setOpenFiles([firstFile])
       } else {
         setCurrentFile(null)
+        setOpenFiles([])
       }
 
     } catch (error) {
       setFiles(new Map())
       setCurrentFile(null)
+      setOpenFiles([])
     } finally {
       setIsLoading(false)
     }
@@ -91,6 +98,7 @@ export const useProjectFolder = () => {
       setProjectFolderState(null)
       setFiles(new Map())
       setCurrentFile(null)
+      setOpenFiles([])
       localStorage.removeItem('scribe-project-folder')
     }
   }, [loadProjectFolder])
@@ -101,8 +109,32 @@ export const useProjectFolder = () => {
     if (!files.has(fileName)) {
       await loadFile(fileName)
     }
+    
+    setOpenFiles(prev => {
+      if (!prev.includes(fileName)) {
+        return [...prev, fileName]
+      }
+      return prev
+    })
+    
     setCurrentFile(fileName)
   }, [files, loadFile])
+
+  const closeFile = useCallback((fileName) => {
+    setOpenFiles(prev => {
+      const newOpenFiles = prev.filter(f => f !== fileName)
+      
+      if (fileName === currentFile) {
+        if (newOpenFiles.length > 0) {
+          setCurrentFile(newOpenFiles[newOpenFiles.length - 1])
+        } else {
+          setCurrentFile(null)
+        }
+      }
+      
+      return newOpenFiles
+    })
+  }, [currentFile])
 
   const createFile = useCallback(async (fileName) => {
     if (!projectFolder || !window.electronAPI) return
@@ -121,6 +153,13 @@ export const useProjectFolder = () => {
       }
       
       setFiles(prev => new Map(prev).set(fullFileName, newFile))
+      
+      setOpenFiles(prev => {
+        if (!prev.includes(fullFileName)) {
+          return [...prev, fullFileName]
+        }
+        return prev
+      })
       setCurrentFile(fullFileName)
     } catch (error) {
       throw new Error(`Failed to create file: ${error.message}`)
@@ -164,14 +203,21 @@ export const useProjectFolder = () => {
         return newMap
       })
       
+      setOpenFiles(prev => prev.filter(f => f !== fileName))
+      
       if (currentFile === fileName) {
-        const remainingFiles = Array.from(files.keys()).filter(name => name !== fileName)
-        setCurrentFile(remainingFiles.length > 0 ? remainingFiles[0] : null)
+        const remainingOpenFiles = openFiles.filter(f => f !== fileName)
+        if (remainingOpenFiles.length > 0) {
+          setCurrentFile(remainingOpenFiles[remainingOpenFiles.length - 1])
+        } else {
+          const remainingFiles = Array.from(files.keys()).filter(name => name !== fileName)
+          setCurrentFile(remainingFiles.length > 0 ? remainingFiles[0] : null)
+        }
       }
     } catch (error) {
       throw new Error(`Failed to delete file: ${error.message}`)
     }
-  }, [projectFolder, currentFile, files])
+  }, [projectFolder, currentFile, files, openFiles])
 
   const renameFile = useCallback(async (oldName, newName) => {
     if (!projectFolder || !window.electronAPI) return
@@ -204,6 +250,8 @@ export const useProjectFolder = () => {
         return newMap
       })
       
+      setOpenFiles(prev => prev.map(f => f === oldName ? fullNewName : f))
+      
       if (currentFile === oldName) {
         setCurrentFile(fullNewName)
       }
@@ -232,9 +280,11 @@ export const useProjectFolder = () => {
     projectFolder,
     files,
     currentFile,
+    openFiles,
     isLoading,
     setProjectFolder,
     openFile,
+    closeFile,
     createFile,
     saveFile,
     deleteFile,

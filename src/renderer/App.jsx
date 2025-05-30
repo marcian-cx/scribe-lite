@@ -13,7 +13,9 @@ function App() {
     projectFolder, 
     files, 
     currentFile, 
+    openFiles,
     openFile, 
+    closeFile,
     createFile, 
     saveFile, 
     deleteFile, 
@@ -129,7 +131,9 @@ function App() {
         <EditorArea 
           files={files}
           currentFile={currentFile}
+          openFiles={openFiles}
           onFileSelect={openFile}
+          onCloseFile={closeFile}
           onSaveFile={handleSaveFile}
           onContentChange={handleContentChange}
         />

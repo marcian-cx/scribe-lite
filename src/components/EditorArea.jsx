@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 
-function EditorArea({ files, currentFile, onFileSelect, onSaveFile, onContentChange }) {
+function EditorArea({ files, currentFile, openFiles, onFileSelect, onCloseFile, onSaveFile, onContentChange }) {
   const editorRef = useRef(null)
   const currentContent = useRef('')
 
@@ -85,11 +86,38 @@ function EditorArea({ files, currentFile, onFileSelect, onSaveFile, onContentCha
     }
   }, [currentFileData])
 
+  const handleTabClose = (e, fileName) => {
+    e.stopPropagation()
+    onCloseFile(fileName)
+  }
+
   if (!currentFile || !currentFileData) {
     return (
       <div className="editor-container">
         <div className="editor-header">
-          <div className="file-tabs"></div>
+          <div className="file-tabs">
+            {openFiles.map(fileName => {
+              const fileData = files.get(fileName)
+              if (!fileData) return null
+              
+              return (
+                <div 
+                  key={fileName}
+                  className="tab"
+                  onClick={() => onFileSelect(fileName)}
+                >
+                  <span>{fileData.modified ? '● ' : ''}{fileData.name}</span>
+                  <button 
+                    className="tab-close"
+                    onClick={(e) => handleTabClose(e, fileName)}
+                    title="Close"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
         <div className="editor-area" style={{ 
           display: 'flex', 
@@ -108,9 +136,29 @@ function EditorArea({ files, currentFile, onFileSelect, onSaveFile, onContentCha
     <div className="editor-container">
       <div className="editor-header">
         <div className="file-tabs">
-          <div className="tab active">
-            <span>{currentFileData.modified ? '● ' : ''}{currentFileData.name}</span>
-          </div>
+          {openFiles.map(fileName => {
+            const fileData = files.get(fileName)
+            if (!fileData) return null
+            
+            const isActive = fileName === currentFile
+            
+            return (
+              <div 
+                key={fileName}
+                className={`tab ${isActive ? 'active' : ''}`}
+                onClick={() => onFileSelect(fileName)}
+              >
+                <span>{fileData.modified ? '● ' : ''}{fileData.name}</span>
+                <button 
+                  className="tab-close"
+                  onClick={(e) => handleTabClose(e, fileName)}
+                  title="Close"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )
+          })}
         </div>
       </div>
       
@@ -161,15 +209,12 @@ function EditorArea({ files, currentFile, onFileSelect, onSaveFile, onContentCha
               showWords: false,
               showSnippets: false,
             },
+            
             quickSuggestions: false,
             parameterHints: { enabled: false },
-            hover: { enabled: false },
-            contextmenu: false,
-            
-            // Performance optimizations
-            smoothScrolling: true,
-            cursorSmoothCaretAnimation: 'on',
-            cursorBlinking: 'smooth',
+            autoClosingBrackets: 'never',
+            autoClosingQuotes: 'never',
+            autoSurround: 'never',
           }}
         />
       </div>

@@ -217,6 +217,8 @@ body {
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
+  position: relative;
+  gap: 8px;
 }
 
 .tab:hover {
@@ -232,6 +234,33 @@ body {
   color: #cccccc;
   font-size: 13px;
   font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.tab-close {
+  background: none;
+  border: none;
+  color: #858585;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.tab:hover .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  background: #464647;
+  color: #ffffff;
 }
 
 .editor-area {
