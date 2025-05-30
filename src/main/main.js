@@ -51,7 +51,7 @@ function createWindow() {
   if (win) {
     win.focus()
     return
-  }
+  } //test
 
   win = new BrowserWindow({
     width: 1200,
